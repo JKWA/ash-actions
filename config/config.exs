@@ -44,8 +44,8 @@ config :spark,
   ]
 
 config :mission_control,
-  ecto_repos: [MissionControl.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  ash_domains: [MissionControl]
 
 # Configures the endpoint
 config :mission_control, MissionControlWeb.Endpoint,

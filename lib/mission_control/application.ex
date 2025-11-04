@@ -9,7 +9,6 @@ defmodule MissionControl.Application do
   def start(_type, _args) do
     children = [
       MissionControlWeb.Telemetry,
-      MissionControl.Repo,
       {DNSCluster, query: Application.get_env(:mission_control, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: MissionControl.PubSub},
       # Start a worker by calling: MissionControl.Worker.start_link(arg)

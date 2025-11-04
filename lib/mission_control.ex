@@ -1,9 +1,9 @@
 defmodule MissionControl do
-  @moduledoc """
-  MissionControl keeps the contexts that define your domain
-  and business logic.
+  use Ash.Domain,
+    otp_app: :mission_control
 
-  Contexts are also responsible for managing your data, regardless
-  if it comes from the database, an external API or others.
-  """
+  resources do
+    resource MissionControl.Superhero
+    resource MissionControl.Assignment
+  end
 end

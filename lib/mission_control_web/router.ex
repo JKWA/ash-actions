@@ -18,6 +18,13 @@ defmodule MissionControlWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live "/superheroes", SuperheroLive.Index, :index
+    live "/superheroes/new", SuperheroLive.Form, :new
+    live "/superheroes/:id/edit", SuperheroLive.Form, :edit
+
+    live "/superheroes/:id", SuperheroLive.Show, :show
+    live "/superheroes/:id/show/edit", SuperheroLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.

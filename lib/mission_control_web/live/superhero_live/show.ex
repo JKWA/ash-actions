@@ -1,5 +1,6 @@
 defmodule MissionControlWeb.SuperheroLive.Show do
   use MissionControlWeb, :live_view
+  require Logger
 
   @impl true
   def render(assigns) do
@@ -16,16 +17,13 @@ defmodule MissionControlWeb.SuperheroLive.Show do
           <.button variant="primary" navigate={~p"/superheroes/#{@superhero}/edit?return_to=show"}>
             <.icon name="hero-pencil-square" /> Edit Superhero
           </.button>
-          <.button phx-click="fight-crime">
-            <.icon name="hero-sparkles" /> Fight Crime
-          </.button>
         </:actions>
       </.header>
 
       <.list>
         <:item title="Name">{@superhero.name}</:item>
         <:item title="Alias">{@superhero.alias}</:item>
-        <:item title="Is Patrolling?">{@superhero.is_patrolling}</:item>
+        <:item title="Status">{@superhero.status}</:item>
         <:item title="Fights Won">{@superhero.fights_won}</:item>
         <:item title="Fights Lost">{@superhero.fights_lost}</:item>
         <:item title="Total Fights">{@superhero.total_fights}</:item>
@@ -52,17 +50,4 @@ defmodule MissionControlWeb.SuperheroLive.Show do
      |> assign(:superhero, superhero)}
   end
 
-  @impl true
-  def handle_event("fight-crime", _params, socket) do
-    # Create assignment - this will trigger async fight execution
-    MissionControl.Assignment
-    |> Ash.Changeset.for_action(:create, %{
-      superhero_id: socket.assigns.superhero.id,
-      difficulty: 1
-    })
-    |> Ash.create!()
-
-    # Assignment is now "fighting" - updates will happen async
-    {:noreply, put_flash(socket, :info, "Superhero sent on assignment!")}
-  end
 end

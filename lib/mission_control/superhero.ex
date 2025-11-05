@@ -2,18 +2,27 @@ defmodule MissionControl.Superhero do
   use Ash.Resource,
     otp_app: :mission_control,
     domain: MissionControl,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    notifiers: [Ash.Notifier.PubSub]
+
+  alias MissionControl.Superhero.Validations.{MustBeOnDuty, MustBeOffDuty, MustBeWorking}
 
   actions do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:name, :alias, :is_patrolling, :fights_won, :fights_lost, :health]
+      accept [:name, :alias]
+    end
+
+    read :get_by_id do
+      get? true
+      argument :id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:id))
     end
 
     update :update do
       primary? true
-      accept [:name, :alias, :is_patrolling, :fights_won, :fights_lost, :health]
+      accept [:name, :alias, :status, :fights_won, :fights_lost, :health]
     end
 
     update :fight_crime do
@@ -21,6 +30,36 @@ defmodule MissionControl.Superhero do
       argument :difficulty, :integer, allow_nil?: false, default: 1
       change MissionControl.Changes.FightCrime
     end
+
+    update :dispatch do
+      require_atomic? false
+      accept []
+      validate MustBeOnDuty
+      change set_attribute(:status, :dispatched)
+    end
+
+    update :on_duty do
+      require_atomic? false
+      accept []
+      validate MustBeOffDuty
+      change set_attribute(:status, :on_duty)
+    end
+
+    update :off_duty do
+      require_atomic? false
+      accept []
+      validate MustBeWorking
+      change set_attribute(:status, :off_duty)
+    end
+  end
+
+  pub_sub do
+    module MissionControlWeb.Endpoint
+    prefix "superhero"
+
+    publish :create, ["created"]
+    publish :update, [:_pkey]
+    publish :destroy, [:_pkey]
   end
 
   attributes do
@@ -45,11 +84,12 @@ defmodule MissionControl.Superhero do
       constraints min_length: 1, max_length: 100
     end
 
-    attribute :is_patrolling, :boolean do
-      description "Whether the superhero is currently patrolling"
+    attribute :status, :atom do
+      description "The current duty status of the superhero"
       allow_nil? false
       public? true
-      default false
+      constraints one_of: [:on_duty, :dispatched, :off_duty]
+      default :off_duty
     end
 
     attribute :fights_won, :integer do
@@ -95,5 +135,23 @@ defmodule MissionControl.Superhero do
     calculate :is_healthy, :boolean, expr(health > 50) do
       description "Whether the superhero is in good health (>50 HP)"
     end
+
+    calculate :is_free, :boolean, expr(status == :off_duty) do
+      description "Whether the superhero is free to take on a new assignment"
+    end
+  end
+
+  # Domain Logic - for use in code where you can't use calculations
+  def on_duty?(%{status: status}), do: status == :on_duty
+
+  def is_free?(%{status: status}), do: status == :off_duty
+
+  def off_duty?(%{status: status}), do: status == :off_duty
+
+  def dispatched?(%{status: status}), do: status == :dispatched
+
+  def working?(%{} = superhero) do
+    predicate = Funx.Predicate.p_any([&dispatched?/1, &on_duty?/1])
+    predicate.(superhero)
   end
 end

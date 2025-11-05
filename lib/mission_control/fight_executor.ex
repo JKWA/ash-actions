@@ -3,29 +3,29 @@ defmodule MissionControl.FightExecutor do
   Handles asynchronous execution of crime-fighting assignments.
   """
 
+  import Funx.Monad
+  alias Funx.Monad.Effect
+
   def execute_async(assignment_id) do
-    Task.start(fn ->
-      # Wait for the fight to happen (5 seconds for now)
-      Process.sleep(5000)
-
-      # Load the assignment
-      assignment = Ash.get!(MissionControl.Assignment, assignment_id)
-
-      # Load the superhero
-      superhero = Ash.get!(MissionControl.Superhero, assignment.superhero_id)
-
-      # Execute the fight logic
+    load_assignment(assignment_id)
+    |> bind(fn assignment ->
+      load_superhero(assignment.superhero_id)
+      |> map(fn superhero -> {assignment, superhero} end)
+    end)
+    |> bind(fn {assignment, superhero} ->
       {won?, health_cost} = execute_fight(superhero, assignment.difficulty)
 
-      # Update the superhero
-      update_superhero(superhero, won?, health_cost)
-
-      # Update the assignment with results
-      update_assignment(assignment, won?, health_cost)
+      [
+        update_superhero(superhero, won?, health_cost),
+        update_assignment(assignment, won?, health_cost)
+      ]
+      |> Effect.sequence_a()
     end)
+    |> Effect.run()
   end
 
   defp execute_fight(superhero, difficulty) do
+    Process.sleep(5000)
     win_chance = max(0, min(100, superhero.health - difficulty * 10))
     won? = :rand.uniform(100) <= win_chance
 
@@ -46,18 +46,19 @@ defmodule MissionControl.FightExecutor do
         |> Ash.Changeset.for_action(:update, %{
           fights_won: superhero.fights_won + 1,
           health: max(0, min(100, superhero.health - health_cost)),
-          is_patrolling: false
+          status: :off_duty
         })
       else
         superhero
         |> Ash.Changeset.for_action(:update, %{
           fights_lost: superhero.fights_lost + 1,
           health: max(0, min(100, superhero.health - health_cost)),
-          is_patrolling: false
+          status: :off_duty
         })
       end
 
-    Ash.update!(changeset)
+    Ash.update(changeset)
+    |> Effect.from_result()
   end
 
   defp update_assignment(assignment, won?, health_cost) do
@@ -69,6 +70,17 @@ defmodule MissionControl.FightExecutor do
       result: result,
       health_cost: health_cost
     })
-    |> Ash.update!()
+    |> Ash.update()
+    |> Effect.from_result()
+  end
+
+  defp load_assignment(assignment_id) do
+    Ash.get(MissionControl.Assignment, assignment_id)
+    |> Effect.from_result()
+  end
+
+  defp load_superhero(superhero_id) do
+    Ash.get(MissionControl.Superhero, superhero_id)
+    |> Effect.from_result()
   end
 end

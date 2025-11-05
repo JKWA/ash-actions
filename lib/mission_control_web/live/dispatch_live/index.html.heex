@@ -1,0 +1,149 @@
+<Layouts.app flash={@flash}>
+  <div class="flex flex-col lg:flex-row gap-8 mt-6">
+    <!-- Superheroes Column -->
+    <div class="flex-1">
+      <div class="flex items-center justify-between mb-4 mr-2">
+        <h3 class="text-xl font-semibold">Superheroes</h3>
+        <.link navigate={~p"/assignments/new?return_to=dispatch"} class="text-blue-600 hover:underline">
+          Create
+        </.link>
+      </div>
+      <div id="superheroes" phx-update="stream" class="flex flex-col gap-4">
+        <div :for={{id, superhero} <- @streams.superheroes} id={id} class={"card bg-base-200 shadow-xl #{superhero_status_border_class(superhero.status)}"}>
+          <div class="card-body relative">
+
+            <div class="dropdown dropdown-end absolute top-2 right-2">
+              <button tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                <.icon name="hero-ellipsis-vertical" class="w-5 h-5" />
+              </button>
+              <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-40">
+                <li>
+                  <button phx-click={JS.push("superhero_on_duty", value: %{id: superhero.id})}>
+                    Bring On Duty
+                  </button>
+                </li>
+                <li>
+                  <button phx-click={JS.push("superhero_off_duty", value: %{id: superhero.id})}>
+                    Send Off Duty
+                  </button>
+                </li>
+                
+                <li>
+                  <.link navigate={~p"/superheroes/#{superhero}/edit?return_to=dispatch"}>
+                    Edit
+                  </.link>
+                </li>
+                <li>
+                  <button
+                    phx-click={JS.push("superhero_delete", value: %{id: superhero.id})}
+                  >
+                    Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <h2 class="card-title text-2xl">{superhero.alias}</h2>
+            <p class="text-lg text-base-content/70">{superhero.name}</p>
+
+            <div class={"badge mt-2 #{superhero_status_badge_class(superhero.status)}"}>
+              {superhero.status}
+            </div>
+
+            
+
+
+            <div class="mt-4 space-y-2">
+              <div class="flex justify-between">
+                <span class="font-semibold">Health:</span>
+                <span>{superhero.health}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-semibold">Win Rate:</span>
+                <span>{if superhero.win_rate, do: "#{Float.round(superhero.win_rate * 100, 1)}%", else: "N/A"}</span>
+              </div>
+            </div>
+
+            <div class="card-actions justify-end mt-4">
+              <.button phx-click={JS.push("superhero_assign", value: %{id: superhero.id})} variant="primary">
+                Assign
+              </.button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignments Column -->
+    <div class="flex-1">
+      <h3 class="text-xl font-semibold mb-4">Assignments</h3>
+      <div id="assignments" phx-update="stream" class="flex flex-col gap-4">
+        <div :for={{id, assignment} <- @streams.assignments} id={id} class={"card bg-base-200 shadow-xl #{status_border_class(assignment.status)}"}>
+          <div class="card-body relative">
+            <div class="dropdown dropdown-end absolute top-2 right-2">
+              <button tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                <.icon name="hero-ellipsis-vertical" class="w-5 h-5" />
+              </button>
+              <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-40">
+                <li>
+                  <button phx-click={JS.push("assignment_close", value: %{id: assignment.id})}>
+                    Close
+                  </button>
+                </li>
+                <li>
+                  <button phx-click={JS.push("assignment_reopen", value: %{id: assignment.id})}>
+                    Reopen
+                  </button>
+                </li>
+                <li>
+                  <.link navigate={~p"/assignments/#{assignment}/edit?return_to=dispatch"}>
+                    Edit
+                  </.link>
+                </li>
+                <li>
+                  <button
+                    phx-click={JS.push("assignment_delete", value: %{id: assignment.id})}
+                  >
+                    Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <h2 class="card-title text-2xl">{assignment.name}</h2>
+            <p class="text-lg text-base-content/70">Superhero: {assignment.superhero_id}</p>
+
+            <div class={"badge mt-2 #{status_badge_class(assignment.status)}"}>
+              {assignment.status}
+            </div>
+
+            <div class="mt-4 space-y-2">
+              <div class="flex justify-between">
+                <span class="font-semibold">Difficulty:</span>
+                <span>{assignment.difficulty}</span>
+              </div>
+              <%= if assignment.result do %>
+                <div class="flex justify-between">
+                  <span class="font-semibold">Result:</span>
+                  <span>{assignment.result}</span>
+                </div>
+              <% end %>
+              <%= if assignment.health_cost do %>
+                <div class="flex justify-between">
+                  <span class="font-semibold">Health Cost:</span>
+                  <span>{assignment.health_cost}</span>
+                </div>
+              <% end %>
+            </div>
+
+            <div class="card-actions justify-end mt-4">
+              <.button phx-click={JS.push("dispatch_assignment", value: %{id: assignment.id})} variant="primary">
+                Dispatch
+              </.button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

@@ -35,3 +35,5 @@ mission_control-*.tar
 npm-debug.log
 /assets/node_modules/
 
+/notes
+

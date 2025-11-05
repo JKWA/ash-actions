@@ -17,7 +17,7 @@ defmodule MissionControlWeb.Router do
   scope "/", MissionControlWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", DispatchLive.Index, :index
 
     live "/superheroes", SuperheroLive.Index, :index
     live "/superheroes/new", SuperheroLive.Form, :new
@@ -25,6 +25,13 @@ defmodule MissionControlWeb.Router do
 
     live "/superheroes/:id", SuperheroLive.Show, :show
     live "/superheroes/:id/show/edit", SuperheroLive.Show, :edit
+
+    live "/assignments", AssignmentLive.Index, :index
+    live "/assignments/new", AssignmentLive.Form, :new
+    live "/assignments/:id/edit", AssignmentLive.Form, :edit
+
+    live "/assignments/:id", AssignmentLive.Show, :show
+    live "/assignments/:id/show/edit", AssignmentLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.

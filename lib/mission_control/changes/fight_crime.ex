@@ -17,7 +17,7 @@ defmodule MissionControl.Changes.FightCrime do
       changeset
       |> inc(:fights_lost, 1)
       |> set_health(hero.health - difficulty * 10)
-      |> Ash.Changeset.force_change_attribute(:is_patrolling, false)
+      |> Ash.Changeset.force_change_attribute(:status, :off_duty)
     end
   end
 
@@ -28,6 +28,6 @@ defmodule MissionControl.Changes.FightCrime do
 
   defp set_health(changeset, new_health) do
     bounded_health = max(0, min(100, new_health))
-    Ash.Changeset.change_attribute(changeset, :health, bounded_health)
+    Ash.Changeset.change_attribute(changeset, :health_cost, bounded_health)
   end
 end

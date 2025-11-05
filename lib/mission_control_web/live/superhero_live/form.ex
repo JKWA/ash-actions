@@ -14,10 +14,21 @@ defmodule MissionControlWeb.SuperheroLive.Form do
       <.form for={@form} id="superhero-form" phx-change="validate" phx-submit="save">
         <.input field={@form[:name]} label="Name" />
         <.input field={@form[:alias]} label="Alias" />
-        <.input field={@form[:is_patrolling]} type="checkbox" label="Is Patrolling?" />
-        <.input field={@form[:fights_won]} type="number" label="Fights Won" />
-        <.input field={@form[:fights_lost]} type="number" label="Fights Lost" />
-        <.input field={@form[:health]} type="number" label="Health" />
+        <%= if @superhero do %>
+          <.input
+            field={@form[:status]}
+            type="select"
+            label="Status"
+            options={[
+              {"Off Duty", :off_duty},
+              {"Dispatched", :dispatched},
+              {"On Duty", :on_duty}
+            ]}
+          />
+          <.input field={@form[:fights_won]} type="number" label="Fights Won" />
+          <.input field={@form[:fights_lost]} type="number" label="Fights Lost" />
+          <.input field={@form[:health]} type="number" label="Health" />
+        <% end %>
 
         <div class="mt-4 flex gap-2">
           <.button phx-disable-with="Saving..." variant="primary">Save Superhero</.button>
@@ -89,7 +100,9 @@ defmodule MissionControlWeb.SuperheroLive.Form do
   end
 
   defp return_to("show"), do: "show"
+  defp return_to("dispatch"), do: "dispatch"
   defp return_to(_), do: "index"
   defp return_path("index", _superhero), do: ~p"/superheroes"
   defp return_path("show", superhero), do: ~p"/superheroes/#{superhero.id}"
+  defp return_path("dispatch", _superhero), do: ~p"/"
 end

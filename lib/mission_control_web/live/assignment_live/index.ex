@@ -99,13 +99,16 @@ defmodule MissionControlWeb.AssignmentLive.Index do
   end
 
   @impl true
-  def handle_info(%{topic: "assignment:created", payload: %Ash.Notifier.Notification{data: assignment}}, socket) do
+  def handle_info(
+        %{topic: "assignment:created", payload: %Ash.Notifier.Notification{data: assignment}},
+        socket
+      ) do
     {:noreply, stream_insert(socket, :assignments, assignment)}
   end
 
   defp extract_error_message(%Ash.Error.Invalid{errors: errors}) do
     errors
-    |> Enum.reject(&is_unknown_error?/1)
+    |> Enum.reject(&unknown_error?/1)
     |> Enum.find_value(&get_error_message/1)
     |> case do
       nil -> "Failed to dispatch assignment"
@@ -115,8 +118,8 @@ defmodule MissionControlWeb.AssignmentLive.Index do
 
   defp extract_error_message(_error), do: "Failed to dispatch assignment"
 
-  defp is_unknown_error?(%Ash.Error.Unknown.UnknownError{}), do: true
-  defp is_unknown_error?(_), do: false
+  defp unknown_error?(%Ash.Error.Unknown.UnknownError{}), do: true
+  defp unknown_error?(_), do: false
 
   defp get_error_message(%Ash.Error.Query.NotFound{resource: MissionControl.Superhero}) do
     "Superhero not found"

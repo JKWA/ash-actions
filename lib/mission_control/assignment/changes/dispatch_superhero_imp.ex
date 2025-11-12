@@ -1,3 +1,5 @@
+# credo:disable-for-this-file
+
 defmodule MissionControl.Assignment.Changes.DispatchSuperhero_Imp do
   use Ash.Resource.Change
 

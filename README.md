@@ -1,18 +1,39 @@
 # MissionControl
 
-To start your Phoenix server:
+A demo project exploring Ash Framework actions through functional programming concepts.
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+This project demonstrates how Ash actions operate as Either pipelines, using superhero dispatch as a practical example of multi-resource operations, Kleisli composition, and closure under context.
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+## Prerequisites
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+* Elixir 1.15 or later
+* Erlang/OTP compatible with your Elixir version
 
-## Learn more
+## Getting Started
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+1. Install dependencies:
+
+   ```bash
+   mix setup
+   ```
+
+2. Start the Phoenix server:
+
+   ```bash
+   mix phx.server
+   ```
+
+   Or run inside IEx for interactive exploration:
+
+   ```bash
+   iex -S mix phx.server
+   ```
+
+3. Visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+## Learn More
+
+* [Ash Framework](https://hexdocs.pm/ash)
+* [Ash Framework Book](https://pragprog.com/titles/ldash/ash-framework/)
+* [Funx](https://www.funxlib.com)
+* [Advanced Functional Programming with Elixir](https://pragprog.com/titles/jkelixir/advanced-functional-programming-with-elixir/)

@@ -12,7 +12,6 @@ defmodule MissionControl.Changes.BeginMission do
       ])
       |> Effect.run()
       |> map(fn [_updated_superhero, updated_assignment] ->
-        # Return only the assignment - action is closed under its resource context
         updated_assignment
       end)
       |> Either.to_result()
@@ -28,7 +27,7 @@ defmodule MissionControl.Changes.BeginMission do
 
   defp update_assignment(assignment) do
     assignment
-    |> Ash.Changeset.for_action(:update, %{status: :fighting})
+    |> Ash.Changeset.for_action(:update, %{status: :dispatched})
     |> Ash.update()
     |> Effect.from_result()
   end

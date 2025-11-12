@@ -35,7 +35,7 @@ defmodule MissionControlWeb.AssignmentLive.Form do
             label="Status"
             options={[
               {"Open", :open},
-              {"Fighting", :fighting},
+              {"Dispatched", :dispatched},
               {"Closed", :closed}
             ]}
           /><.input field={@form[:result]} type="text" label="Result" /><.input

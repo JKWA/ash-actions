@@ -56,8 +56,7 @@ defmodule MissionControl.Assignment.Changes.EnforceSingleAssignment do
 
   defp close_assignment(assignment) do
     assignment
-    |> Ash.Changeset.for_update(:close)
-    |> Ash.update()
+    |> MissionControl.close_assignment()
     |> from_result()
   end
 

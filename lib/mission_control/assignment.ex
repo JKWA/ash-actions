@@ -36,7 +36,7 @@ defmodule MissionControl.Assignment do
       require_atomic? false
       accept []
       validate MustBeOpen
-      change set_attribute(:status, :fighting)
+      change set_attribute(:status, :dispatched)
       change DispatchSuperhero
     end
 
@@ -81,7 +81,7 @@ defmodule MissionControl.Assignment do
     attribute :status, :atom do
       allow_nil? false
       public? true
-      constraints one_of: [:open, :fighting, :closed]
+      constraints one_of: [:open, :dispatched, :fighting, :closed]
       default :open
     end
 

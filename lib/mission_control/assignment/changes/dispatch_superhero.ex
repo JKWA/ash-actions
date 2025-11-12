@@ -45,8 +45,7 @@ defmodule MissionControl.Assignment.Changes.DispatchSuperhero do
 
   defp rollback_assignment(assignment) do
     assignment
-    |> Ash.Changeset.for_action(:update, %{status: :open})
-    |> Ash.update()
+    |> MissionControl.update_assignment(%{status: :open})
     |> from_result()
   end
 

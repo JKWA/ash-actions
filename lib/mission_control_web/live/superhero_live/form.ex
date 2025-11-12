@@ -20,9 +20,9 @@ defmodule MissionControlWeb.SuperheroLive.Form do
             type="select"
             label="Status"
             options={[
-              {"Off Duty", :off_duty},
+              {"On Duty", :on_duty},
               {"Dispatched", :dispatched},
-              {"On Duty", :on_duty}
+              {"Off Duty", :off_duty}
             ]}
           />
           <.input field={@form[:fights_won]} type="number" label="Fights Won" />

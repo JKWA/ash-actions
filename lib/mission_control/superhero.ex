@@ -144,7 +144,7 @@ defmodule MissionControl.Superhero do
   # Domain Logic - for use in code where you can't use calculations
   def on_duty?(%{status: status}), do: status == :on_duty
 
-  def is_free?(%{status: status}), do: status == :off_duty
+  def free?(%{status: status}), do: status == :off_duty
 
   def off_duty?(%{status: status}), do: status == :off_duty
 

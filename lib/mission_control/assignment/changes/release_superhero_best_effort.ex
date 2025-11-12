@@ -10,9 +10,7 @@ defmodule MissionControl.Assignment.Changes.ReleaseSuperheroBestEffort do
       load_superhero(assignment)
       |> bind(&off_duty_superhero/1)
       |> bind(&tap_broadcast_off_duty_superhero/1)
-      |> map(fn _ -> assignment end)
-      |> map_left(fn _ -> assignment end)
-      |> to_result()
+      |> then(fn _ -> {:ok, assignment} end)
     end)
   end
 
@@ -23,8 +21,7 @@ defmodule MissionControl.Assignment.Changes.ReleaseSuperheroBestEffort do
 
   defp off_duty_superhero(superhero) do
     superhero
-    |> Ash.Changeset.for_action(:off_duty)
-    |> Ash.update(domain: MissionControl)
+    |> MissionControl.off_duty_superhero()
     |> from_result()
   end
 

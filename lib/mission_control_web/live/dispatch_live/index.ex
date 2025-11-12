@@ -204,7 +204,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
   defp extract_error_message(%Ash.Error.Invalid{errors: errors}, default_message) do
     errors
-    |> Enum.reject(&is_unknown_error?/1)
+    |> Enum.reject(&unknown_error?/1)
     |> Enum.find_value(&get_error_message/1)
     |> case do
       nil -> default_message
@@ -214,8 +214,8 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
   defp extract_error_message(_error, default_message), do: default_message
 
-  defp is_unknown_error?(%Ash.Error.Unknown.UnknownError{}), do: true
-  defp is_unknown_error?(_), do: false
+  defp unknown_error?(%Ash.Error.Unknown.UnknownError{}), do: true
+  defp unknown_error?(_), do: false
 
   defp get_error_message(%Ash.Error.Query.NotFound{resource: MissionControl.Superhero}) do
     "Superhero not found"
@@ -225,7 +225,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
   defp get_error_message(_), do: nil
 
   defp status_badge_class(:open), do: "badge-success"
-  defp status_badge_class(:fighting), do: "badge-warning"
+  defp status_badge_class(:dispatched), do: "badge-warning"
   defp status_badge_class(:closed), do: "badge-neutral"
   defp status_badge_class(_), do: "badge-primary"
 
@@ -235,7 +235,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
   defp superhero_status_badge_class(_), do: "badge-primary"
 
   defp status_border_class(:open), do: "border-l-4 border-success"
-  defp status_border_class(:fighting), do: "border-l-4 border-warning"
+  defp status_border_class(:dispatched), do: "border-l-4 border-warning"
   defp status_border_class(:closed), do: "border-l-4 border-neutral"
   defp status_border_class(_), do: "border-l-4 border-primary"
 

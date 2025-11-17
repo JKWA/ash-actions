@@ -1,6 +1,7 @@
 defmodule MissionControl.Superhero.Validations.MustBeWorking do
   use Ash.Resource.Validation
   alias MissionControl.Superhero
+  alias Ash.Error.Changes.InvalidAttribute
 
   @impl true
   def validate(changeset, _opts, _context) do
@@ -10,8 +11,11 @@ defmodule MissionControl.Superhero.Validations.MustBeWorking do
       :ok
     else
       {:error,
-       field: :status,
-       message: "#{superhero.alias} must be working (current status: #{superhero.status})"}
+       InvalidAttribute.exception(
+         field: :status,
+         message: "#{superhero.alias} must be working",
+         value: superhero.status
+       )}
     end
   end
 end

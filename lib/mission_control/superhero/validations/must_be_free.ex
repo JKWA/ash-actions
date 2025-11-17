@@ -1,6 +1,7 @@
 defmodule MissionControl.Superhero.Validations.MustBeFree do
   use Ash.Resource.Validation
   alias MissionControl.Superhero
+  alias Ash.Error.Changes.InvalidAttribute
 
   @impl true
   def validate(changeset, _opts, _context) do
@@ -10,8 +11,11 @@ defmodule MissionControl.Superhero.Validations.MustBeFree do
       :ok
     else
       {:error,
-       field: :status,
-       message: "#{superhero.alias} must be free (current status: #{superhero.status})"}
+       InvalidAttribute.exception(
+         field: :status,
+         message: "#{superhero.alias} must be free",
+         value: superhero.status
+       )}
     end
   end
 end

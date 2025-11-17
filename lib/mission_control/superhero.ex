@@ -5,7 +5,12 @@ defmodule MissionControl.Superhero do
     data_layer: Ash.DataLayer.Ets,
     notifiers: [Ash.Notifier.PubSub]
 
-  alias MissionControl.Superhero.Validations.{MustBeOnDuty, MustBeOffDuty, MustBeWorking}
+  alias MissionControl.Superhero.Validations.{
+    MustBeOnDuty,
+    MustBeOffDuty,
+    MustBeWorking,
+    AliasIsUnique
+  }
 
   actions do
     defaults [:read, :destroy]
@@ -21,8 +26,10 @@ defmodule MissionControl.Superhero do
     end
 
     update :update do
+      require_atomic? false
       primary? true
       accept [:name, :alias, :status, :fights_won, :fights_lost, :health]
+      validate AliasIsUnique, where: [changing(:alias)]
     end
 
     update :fight_crime do

@@ -11,10 +11,10 @@ defmodule MissionControl.Assignment do
     ReleaseSuperheroBestEffort
   }
 
-  alias MissionControl.Assignment.Validations.{MustBeOpen, MustBeClosed}
+  alias MissionControl.Assignment.Validations.{MustBeOpen, MustBeClosed, CheckBeforeDelete}
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     read :by_superhero do
       argument :superhero_id, :uuid, allow_nil?: false
@@ -53,6 +53,13 @@ defmodule MissionControl.Assignment do
       validate MustBeClosed
       change set_attribute(:status, :open)
       change EnforceSingleAssignment
+    end
+
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+      validate CheckBeforeDelete
+      change ReleaseSuperheroBestEffort
     end
   end
 

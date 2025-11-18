@@ -12,6 +12,8 @@ defmodule MissionControl.Superhero do
     AliasIsUnique
   }
 
+  alias MissionControl.Changes.Superhero.OverHealth
+
   actions do
     defaults [:read, :destroy]
 
@@ -57,6 +59,7 @@ defmodule MissionControl.Superhero do
       accept []
       validate MustBeWorking
       change set_attribute(:status, :off_duty)
+      change OverHealth
     end
   end
 

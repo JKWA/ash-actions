@@ -133,9 +133,17 @@ defmodule MissionControlWeb.DispatchLive.Index do
   @impl true
   def handle_event("assignment_delete", %{"id" => id}, socket) do
     assignment = Ash.get!(MissionControl.Assignment, id)
-    Ash.destroy!(assignment)
 
-    {:noreply, stream_delete(socket, :assignments, assignment)}
+    case Ash.destroy(assignment) do
+      :ok ->
+        {:noreply, stream_delete(socket, :assignments, assignment)}
+
+      {:ok, _} ->
+        {:noreply, stream_delete(socket, :assignments, assignment)}
+
+      {:error, error} ->
+        handle_error(error, "delete assignment", socket)
+    end
   end
 
   @impl true

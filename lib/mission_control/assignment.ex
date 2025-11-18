@@ -61,6 +61,10 @@ defmodule MissionControl.Assignment do
       validate CheckBeforeDelete
       change ReleaseSuperheroBestEffort
     end
+
+    destroy :force_destroy do
+      require_atomic? false
+    end
   end
 
   pub_sub do

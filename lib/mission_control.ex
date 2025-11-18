@@ -24,6 +24,7 @@ defmodule MissionControl do
       define :close_assignment, action: :close
       define :reopen_assignment, action: :reopen
       define :delete_assignment, action: :destroy
+      define :force_delete_assignment, action: :force_destroy
     end
   end
 end

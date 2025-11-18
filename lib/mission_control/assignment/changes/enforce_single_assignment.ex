@@ -46,7 +46,7 @@ defmodule MissionControl.Assignment.Changes.EnforceSingleAssignment do
   end
 
   defp delete_assignment(assignment) do
-    Ash.destroy(assignment)
+    MissionControl.force_delete_assignment(assignment)
     |> normalize_destroy_result()
     |> from_result()
   end

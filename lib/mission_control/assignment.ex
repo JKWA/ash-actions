@@ -8,10 +8,12 @@ defmodule MissionControl.Assignment do
   alias MissionControl.Assignment.Changes.{
     EnforceSingleAssignment,
     DispatchSuperhero,
-    ReleaseSuperheroBestEffort
+    ReleaseSuperheroBestEffort,
+    AutoCloseOnResult
   }
 
   alias MissionControl.Assignment.Validations.{MustBeOpen, MustBeClosed, CheckBeforeDelete}
+  alias MissionControl.Assignment.Calculations.MaybeSuperhero
 
   actions do
     defaults [:read]
@@ -22,7 +24,7 @@ defmodule MissionControl.Assignment do
     end
 
     create :create do
-      accept [:superhero_id, :name, :difficulty]
+      accept [:superhero_id, :name]
       primary? true
       change EnforceSingleAssignment
     end
@@ -40,6 +42,12 @@ defmodule MissionControl.Assignment do
       change DispatchSuperhero
     end
 
+    update :start_fighting do
+      require_atomic? false
+      accept []
+      change set_attribute(:status, :fighting)
+    end
+
     update :close do
       require_atomic? false
       accept []
@@ -53,6 +61,13 @@ defmodule MissionControl.Assignment do
       validate MustBeClosed
       change set_attribute(:status, :open)
       change EnforceSingleAssignment
+    end
+
+    update :update_result do
+      require_atomic? false
+      accept [:result]
+      change AutoCloseOnResult
+      change ReleaseSuperheroBestEffort
     end
 
     destroy :destroy do
@@ -73,6 +88,8 @@ defmodule MissionControl.Assignment do
 
     publish :create, ["created"]
     publish :update, [:_pkey]
+    publish :update_result, [:_pkey]
+    publish :start_fighting, [:_pkey]
     publish :destroy, [:_pkey]
   end
 
@@ -84,11 +101,6 @@ defmodule MissionControl.Assignment do
       public? true
     end
 
-    attribute :difficulty, :integer do
-      allow_nil? false
-      public? true
-    end
-
     attribute :status, :atom do
       allow_nil? false
       public? true
@@ -96,8 +108,10 @@ defmodule MissionControl.Assignment do
       default :open
     end
 
-    attribute :result, :string do
+    attribute :result, :atom do
       public? true
+      constraints one_of: [:won, :lost, :unknown]
+      default :unknown
     end
 
     attribute :health_cost, :integer do
@@ -105,6 +119,10 @@ defmodule MissionControl.Assignment do
     end
 
     timestamps()
+  end
+
+  calculations do
+    calculate :maybe_superhero, :map, MaybeSuperhero
   end
 
   relationships do

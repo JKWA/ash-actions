@@ -24,7 +24,6 @@ defmodule MissionControlWeb.SuperheroLive.Index do
         <:col :let={{_id, superhero}} label="Alias">{superhero.alias}</:col>
         <:col :let={{_id, superhero}} label="Health">{superhero.health}</:col>
         <:col :let={{_id, superhero}} label="Status">{superhero.status}</:col>
-        <:col :let={{_id, superhero}} label="Total Fights">{superhero.total_fights}</:col>
         <:col :let={{_id, superhero}} label="Win Rate">
           {if superhero.win_rate, do: "#{Float.round(superhero.win_rate * 100, 1)}%", else: "N/A"}
         </:col>
@@ -61,7 +60,7 @@ defmodule MissionControlWeb.SuperheroLive.Index do
     superheroes =
       MissionControl.Superhero
       |> Ash.read!()
-      |> Ash.load!([:total_fights, :win_rate, :is_healthy])
+      |> Ash.load!([:win_rate, :healthy?])
 
     {:ok,
      socket
@@ -82,8 +81,7 @@ defmodule MissionControlWeb.SuperheroLive.Index do
 
     case MissionControl.create_assignment(%{
            superhero_id: superhero.id,
-           name: superhero.alias <> " Assignment",
-           difficulty: 1
+           name: superhero.alias <> " Assignment"
          }) do
       {:ok, _assignment} ->
         {:noreply, put_flash(socket, :info, "Superhero sent on assignment!")}
@@ -91,7 +89,6 @@ defmodule MissionControlWeb.SuperheroLive.Index do
       {:error, %Ash.Error.Invalid{errors: errors} = error} ->
         Logger.error("Assignment creation failed: #{inspect(error, pretty: true)}")
 
-        # Extract first message
         message =
           case errors do
             [%{message: msg} | _] -> msg

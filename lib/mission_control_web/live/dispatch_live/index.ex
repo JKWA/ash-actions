@@ -7,9 +7,12 @@ defmodule MissionControlWeb.DispatchLive.Index do
     superheroes =
       MissionControl.Superhero
       |> Ash.read!()
-      |> Ash.load!([:total_fights, :win_rate, :is_healthy])
+      |> Ash.load!([:win_rate, :healthy?])
 
-    assignments = Ash.read!(MissionControl.Assignment)
+    assignments =
+      MissionControl.Assignment
+      |> Ash.read!()
+      |> Ash.load!([:maybe_superhero])
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(MissionControl.PubSub, "assignment:created")
@@ -34,10 +37,15 @@ defmodule MissionControlWeb.DispatchLive.Index do
   end
 
   @impl true
-  def handle_event("superhero_delete", %{"id" => id}, socket) do
-    superhero = Ash.get!(MissionControl.Superhero, id)
-    Ash.destroy!(superhero)
-    {:noreply, stream_delete(socket, :superheroes, superhero)}
+  def handle_event("terminate_superhero", %{"id" => id}, socket) do
+    case Registry.lookup(MissionControl.SuperheroRegistry, id) do
+      [{pid, _}] ->
+        send(pid, :terminate)
+        {:noreply, put_flash(socket, :info, "Superhero terminated")}
+
+      [] ->
+        {:noreply, put_flash(socket, :error, "Superhero already terminated")}
+    end
   end
 
   @impl true
@@ -46,7 +54,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.on_duty_superhero(superhero) do
       {:ok, updated_superhero} ->
-        updated_superhero = Ash.load!(updated_superhero, [:win_rate])
+        updated_superhero = Ash.load!(updated_superhero, [:win_rate, :healthy?])
         {:noreply, stream_insert(socket, :superheroes, updated_superhero)}
 
       {:error, error} ->
@@ -60,7 +68,21 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.off_duty_superhero(superhero) do
       {:ok, updated_superhero} ->
-        updated_superhero = Ash.load!(updated_superhero, [:win_rate])
+        updated_superhero = Ash.load!(updated_superhero, [:win_rate, :healthy?])
+        {:noreply, stream_insert(socket, :superheroes, updated_superhero)}
+
+      {:error, error} ->
+        handle_error(error, "off duty", socket)
+    end
+  end
+
+  @impl true
+  def handle_event("superhero_recovery", %{"id" => id}, socket) do
+    superhero = Ash.get!(MissionControl.Superhero, id)
+
+    case MissionControl.recovery_superhero(superhero) do
+      {:ok, updated_superhero} ->
+        updated_superhero = Ash.load!(updated_superhero, [:win_rate, :healthy?])
         {:noreply, stream_insert(socket, :superheroes, updated_superhero)}
 
       {:error, error} ->
@@ -74,8 +96,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.create_assignment(%{
            superhero_id: superhero.id,
-           name: superhero.alias <> " Assignment",
-           difficulty: 1
+           name: superhero.alias <> " Assignment"
          }) do
       {:ok, _assignment} ->
         {:noreply, socket}
@@ -91,6 +112,8 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.dispatch_assignment(assignment) do
       {:ok, updated_assignment} ->
+        updated_assignment = Ash.load!(updated_assignment, [:maybe_superhero])
+
         {:noreply,
          socket
          |> stream_insert(:assignments, updated_assignment)}
@@ -106,6 +129,8 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.close_assignment(assignment) do
       {:ok, updated_assignment} ->
+        updated_assignment = Ash.load!(updated_assignment, [:maybe_superhero])
+
         {:noreply,
          socket
          |> stream_insert(:assignments, updated_assignment)}
@@ -121,6 +146,8 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.reopen_assignment(assignment) do
       {:ok, updated_assignment} ->
+        updated_assignment = Ash.load!(updated_assignment, [:maybe_superhero])
+
         {:noreply,
          socket
          |> stream_insert(:assignments, updated_assignment)}
@@ -152,6 +179,9 @@ defmodule MissionControlWeb.DispatchLive.Index do
         socket
       ) do
     Phoenix.PubSub.subscribe(MissionControl.PubSub, "assignment:#{assignment.id}")
+
+    assignment = Ash.load!(assignment, [:maybe_superhero])
+
     {:noreply, stream_insert(socket, :assignments, assignment)}
   end
 
@@ -171,6 +201,8 @@ defmodule MissionControlWeb.DispatchLive.Index do
         %{topic: "assignment:" <> _id, payload: %Ash.Notifier.Notification{data: assignment}},
         socket
       ) do
+    assignment = Ash.load!(assignment, [:maybe_superhero])
+
     {:noreply, stream_insert(socket, :assignments, assignment)}
   end
 
@@ -180,7 +212,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
         socket
       ) do
     Phoenix.PubSub.subscribe(MissionControl.PubSub, "superhero:#{superhero.id}")
-    superhero = Ash.load!(superhero, [:total_fights, :win_rate, :is_healthy])
+    superhero = Ash.load!(superhero, [:win_rate, :healthy?])
     {:noreply, stream_insert(socket, :superheroes, superhero)}
   end
 
@@ -200,8 +232,16 @@ defmodule MissionControlWeb.DispatchLive.Index do
         %{topic: "superhero:" <> _id, payload: %Ash.Notifier.Notification{data: superhero}},
         socket
       ) do
-    superhero = Ash.load!(superhero, [:total_fights, :win_rate, :is_healthy])
+    superhero = Ash.load!(superhero, [:win_rate, :healthy?])
     {:noreply, stream_insert(socket, :superheroes, superhero)}
+  end
+
+  defp superhero_alias(maybe_superhero) do
+    Funx.Foldable.fold_l(
+      maybe_superhero,
+      fn hero -> hero.alias end,
+      fn -> "[Missing Superhero]" end
+    )
   end
 
   defp handle_error(error, operation_name, socket) do

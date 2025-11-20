@@ -22,8 +22,6 @@ defmodule MissionControlWeb.AssignmentLive.Show do
       <.list>
         <:item title="Id">{@assignment.id}</:item>
 
-        <:item title="Difficulty">{@assignment.difficulty}</:item>
-
         <:item title="Status">{@assignment.status}</:item>
 
         <:item title="Result">{@assignment.result}</:item>

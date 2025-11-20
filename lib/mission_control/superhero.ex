@@ -3,22 +3,30 @@ defmodule MissionControl.Superhero do
     otp_app: :mission_control,
     domain: MissionControl,
     data_layer: Ash.DataLayer.Ets,
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub, MissionControl.Superhero.Notifiers.ActorNotifier]
+
+  import Funx.Predicate
 
   alias MissionControl.Superhero.Validations.{
     MustBeOnDuty,
     MustBeOffDuty,
-    MustBeWorking,
-    AliasIsUnique
+    MustBeFree,
+    MustBeWorking
   }
 
-  alias MissionControl.Changes.Superhero.OverHealth
+  alias MissionControl.Superhero.Calculations.{
+    WinRate,
+    Healthy
+  }
+
+  alias MissionControl.Superhero.Changes.{NotifyActor, StartActor}
 
   actions do
     defaults [:read, :destroy]
 
     create :create do
       accept [:name, :alias]
+      change StartActor
     end
 
     read :get_by_id do
@@ -30,14 +38,7 @@ defmodule MissionControl.Superhero do
     update :update do
       require_atomic? false
       primary? true
-      accept [:name, :alias, :status, :fights_won, :fights_lost, :health]
-      validate AliasIsUnique, where: [changing(:alias)]
-    end
-
-    update :fight_crime do
-      require_atomic? false
-      argument :difficulty, :integer, allow_nil?: false, default: 1
-      change MissionControl.Changes.FightCrime
+      accept [:name, :alias, :status, :health]
     end
 
     update :dispatch do
@@ -45,13 +46,15 @@ defmodule MissionControl.Superhero do
       accept []
       validate MustBeOnDuty
       change set_attribute(:status, :dispatched)
+      change NotifyActor
     end
 
     update :on_duty do
       require_atomic? false
       accept []
-      validate MustBeOffDuty
+      validate MustBeFree
       change set_attribute(:status, :on_duty)
+      change NotifyActor
     end
 
     update :off_duty do
@@ -59,7 +62,20 @@ defmodule MissionControl.Superhero do
       accept []
       validate MustBeWorking
       change set_attribute(:status, :off_duty)
-      change OverHealth
+      change NotifyActor
+    end
+
+    update :recovery do
+      require_atomic? false
+      accept []
+      validate MustBeOffDuty
+      change set_attribute(:status, :recovery)
+      change NotifyActor
+    end
+
+    update :update_health do
+      require_atomic? false
+      accept [:health]
     end
   end
 
@@ -69,6 +85,11 @@ defmodule MissionControl.Superhero do
 
     publish :create, ["created"]
     publish :update, [:_pkey]
+    publish :update_health, [:_pkey]
+    publish :on_duty, [:_pkey]
+    publish :off_duty, [:_pkey]
+    publish :dispatch, [:_pkey]
+    publish :recovery, [:_pkey]
     publish :destroy, [:_pkey]
   end
 
@@ -98,24 +119,8 @@ defmodule MissionControl.Superhero do
       description "The current duty status of the superhero"
       allow_nil? false
       public? true
-      constraints one_of: [:on_duty, :dispatched, :off_duty]
+      constraints one_of: [:on_duty, :dispatched, :off_duty, :recovery]
       default :off_duty
-    end
-
-    attribute :fights_won, :integer do
-      description "Number of fights won"
-      allow_nil? false
-      public? true
-      constraints min: 0
-      default 0
-    end
-
-    attribute :fights_lost, :integer do
-      description "Number of fights lost"
-      allow_nil? false
-      public? true
-      constraints min: 0
-      default 0
     end
 
     attribute :health, :integer do
@@ -127,41 +132,35 @@ defmodule MissionControl.Superhero do
     end
   end
 
-  calculations do
-    calculate :total_fights, :integer, expr(fights_won + fights_lost) do
-      description "Total number of fights (won + lost)"
-    end
-
-    calculate :win_rate,
-              :float,
-              expr(
-                if total_fights > 0 do
-                  fights_won / total_fights
-                else
-                  0.0
-                end
-              )
-
-    calculate :is_healthy, :boolean, expr(health > 50) do
-      description "Whether the superhero is in good health (>50 HP)"
-    end
-
-    calculate :is_free, :boolean, expr(status == :off_duty) do
-      description "Whether the superhero is free to take on a new assignment"
+  relationships do
+    has_many :assignments, MissionControl.Assignment do
+      destination_attribute :superhero_id
     end
   end
 
-  # Domain Logic - for use in code where you can't use calculations
-  def on_duty?(%{status: status}), do: status == :on_duty
+  calculations do
+    calculate :win_rate, :float, WinRate
 
-  def free?(%{status: status}), do: status == :off_duty
+    calculate :healthy?, :boolean, {Healthy, threshold: 50}
+  end
+
+  def on_duty?(%{status: status}), do: status == :on_duty
 
   def off_duty?(%{status: status}), do: status == :off_duty
 
   def dispatched?(%{status: status}), do: status == :dispatched
 
+  def recovery?(%{status: status}), do: status == :recovery
+
+  defp working_predicate do
+    p_any([&dispatched?/1, &on_duty?/1, &recovery?/1])
+  end
+
   def working?(%{} = superhero) do
-    predicate = Funx.Predicate.p_any([&dispatched?/1, &on_duty?/1])
-    predicate.(superhero)
+    working_predicate().(superhero)
+  end
+
+  def free?(%{} = superhero) do
+    p_not(working_predicate()).(superhero)
   end
 end

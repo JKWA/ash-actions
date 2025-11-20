@@ -1,12 +1,15 @@
 defmodule MissionControl.Assignment.Validations.CheckBeforeDelete do
   use Ash.Resource.Validation
   import Funx.Foldable
+  import Funx.Monad
+
+  require Logger
+
   alias Funx.Monad.Effect
   alias MissionControl.Validations
 
   @impl true
   def validate(changeset, _opts, _context) do
-
     validators = [
       &Validations.mission_clearance/1,
       &Validations.equipment_return/1,
@@ -17,20 +20,28 @@ defmodule MissionControl.Assignment.Validations.CheckBeforeDelete do
 
     assignment = Ash.load!(changeset.data, :superhero)
 
-    Effect.validate(assignment.superhero, validators)
-    |> Effect.run()
-    |> map_result_to_ash()
+    if assignment.superhero == nil do
+      :ok
+    else
+      Effect.right(assignment)
+      |> bind(fn assignment ->
+        Effect.validate(assignment.superhero, validators)
+      end)
+      |> Effect.run()
+      |> map_result_to_ash()
+    end
   end
 
   defp map_result_to_ash(value) do
     fold_l(
       value,
       fn _val -> :ok end,
-      fn errors -> {
-        :error,
-        field: :base,
-        message: "#{Enum.join(errors, ", ")}"
-      } end
+      fn errors ->
+        {
+          :error,
+          field: :base, message: "#{Enum.join(errors, ", ")}"
+        }
+      end
     )
   end
 end

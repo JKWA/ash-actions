@@ -6,13 +6,16 @@ defmodule MissionControlWeb.DispatchLive.Index do
   def mount(_params, _session, socket) do
     superheroes =
       MissionControl.Superhero
+      |> Ash.Query.sort(healthy?: :asc, alias: :asc)
+      |> Ash.Query.load(:healthy?)
       |> Ash.read!()
-      |> Ash.load!([:win_rate, :healthy?])
+      |> Ash.load!([:win_rate])
 
-    assignments =
-      MissionControl.Assignment
-      |> Ash.read!()
-      |> Ash.load!([:maybe_superhero])
+    assignments = list_assignments()
+
+    Logger.info(
+      "Assignments by status: #{inspect(Enum.frequencies_by(assignments, & &1.status))}"
+    )
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(MissionControl.PubSub, "assignment:created")
@@ -30,10 +33,24 @@ defmodule MissionControlWeb.DispatchLive.Index do
     socket =
       socket
       |> assign(:page_title, "Dispatch")
+      |> assign(:show_closed, false)
       |> stream(:superheroes, superheroes, id_key: :id)
       |> stream(:assignments, assignments, id_key: :id)
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_event("toggle_closed", _params, socket) do
+    new_value = !socket.assigns.show_closed
+    Logger.info("Toggling show_closed from #{socket.assigns.show_closed} to #{new_value}")
+
+    assignments = list_assignments()
+
+    {:noreply,
+     socket
+     |> assign(:show_closed, new_value)
+     |> stream(:assignments, assignments, reset: true)}
   end
 
   @impl true
@@ -51,6 +68,8 @@ defmodule MissionControlWeb.DispatchLive.Index do
   @impl true
   def handle_event("superhero_on_duty", %{"id" => id}, socket) do
     superhero = Ash.get!(MissionControl.Superhero, id)
+
+    Logger.debug(inspect(superhero, label: "Setting superhero"))
 
     case MissionControl.on_duty_superhero(superhero) do
       {:ok, updated_superhero} ->
@@ -112,7 +131,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.dispatch_assignment(assignment) do
       {:ok, updated_assignment} ->
-        updated_assignment = Ash.load!(updated_assignment, [:maybe_superhero])
+        updated_assignment = Ash.load!(updated_assignment, [:closed?, :maybe_superhero])
 
         {:noreply,
          socket
@@ -129,7 +148,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.close_assignment(assignment) do
       {:ok, updated_assignment} ->
-        updated_assignment = Ash.load!(updated_assignment, [:maybe_superhero])
+        updated_assignment = Ash.load!(updated_assignment, [:closed?, :maybe_superhero])
 
         {:noreply,
          socket
@@ -146,7 +165,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
     case MissionControl.reopen_assignment(assignment) do
       {:ok, updated_assignment} ->
-        updated_assignment = Ash.load!(updated_assignment, [:maybe_superhero])
+        updated_assignment = Ash.load!(updated_assignment, [:closed?, :maybe_superhero])
 
         {:noreply,
          socket
@@ -180,9 +199,9 @@ defmodule MissionControlWeb.DispatchLive.Index do
       ) do
     Phoenix.PubSub.subscribe(MissionControl.PubSub, "assignment:#{assignment.id}")
 
-    assignment = Ash.load!(assignment, [:maybe_superhero])
+    assignment = Ash.load!(assignment, [:closed?, :maybe_superhero])
 
-    {:noreply, stream_insert(socket, :assignments, assignment)}
+    {:noreply, stream_insert(socket, :assignments, assignment, at: 0)}
   end
 
   @impl true
@@ -201,7 +220,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
         %{topic: "assignment:" <> _id, payload: %Ash.Notifier.Notification{data: assignment}},
         socket
       ) do
-    assignment = Ash.load!(assignment, [:maybe_superhero])
+    assignment = Ash.load!(assignment, [:closed?, :maybe_superhero])
 
     {:noreply, stream_insert(socket, :assignments, assignment)}
   end
@@ -234,6 +253,14 @@ defmodule MissionControlWeb.DispatchLive.Index do
       ) do
     superhero = Ash.load!(superhero, [:win_rate, :healthy?])
     {:noreply, stream_insert(socket, :superheroes, superhero)}
+  end
+
+  defp list_assignments do
+    MissionControl.Assignment
+    |> Ash.Query.sort(:closed?, inserted_at: :desc)
+    |> Ash.Query.load(:closed?)
+    |> Ash.read!()
+    |> Ash.load!([:maybe_superhero])
   end
 
   defp superhero_alias(maybe_superhero) do

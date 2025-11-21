@@ -13,7 +13,7 @@ defmodule MissionControl.Assignment do
   }
 
   alias MissionControl.Assignment.Validations.{MustBeOpen, MustBeClosed, CheckBeforeDelete}
-  alias MissionControl.Assignment.Calculations.MaybeSuperhero
+  alias MissionControl.Assignment.Calculations.{Closed, MaybeSuperhero}
 
   actions do
     defaults [:read]
@@ -122,6 +122,7 @@ defmodule MissionControl.Assignment do
   end
 
   calculations do
+    calculate :closed?, :boolean, Closed
     calculate :maybe_superhero, :map, MaybeSuperhero
   end
 
@@ -130,4 +131,6 @@ defmodule MissionControl.Assignment do
       allow_nil? false
     end
   end
+
+  def closed?(%{status: status}), do: status == :closed
 end

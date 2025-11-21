@@ -77,9 +77,21 @@
 
     <!-- Assignments Column -->
     <div class="flex-1">
-      <h3 class="text-xl font-semibold mb-4">Assignments</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold">Assignments</h3>
+        <label class="label cursor-pointer gap-2">
+          <span class="label-text">Show Closed</span>
+          <input
+            type="checkbox"
+            class="toggle toggle-primary"
+            checked={@show_closed}
+            phx-click="toggle_closed" />
+        </label>
+      </div>
       <div id="assignments" phx-update="stream" class="flex flex-col gap-4">
-        <div :for={{id, assignment} <- @streams.assignments} id={id} class={"card bg-base-200 shadow-xl #{status_border_class(assignment.status)}"}>
+        <div :for={{id, assignment} <- @streams.assignments} 
+          id={id} 
+          class={"card bg-base-200 shadow-xl #{status_border_class(assignment.status)} #{if !@show_closed and assignment.closed?, do: "hidden", else: ""}"}>
           <div class="card-body relative">
             <div class="dropdown dropdown-end absolute top-2 right-2">
               <button tabindex="0" role="button" class="btn btn-ghost btn-sm">

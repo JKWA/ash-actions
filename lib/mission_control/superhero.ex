@@ -140,7 +140,6 @@ defmodule MissionControl.Superhero do
 
   calculations do
     calculate :win_rate, :float, WinRate
-
     calculate :healthy?, :boolean, {Healthy, threshold: 50}
   end
 

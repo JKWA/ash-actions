@@ -1,21 +1,21 @@
 defmodule MissionControlWeb.DispatchLive.Index do
   use MissionControlWeb, :live_view
   require Logger
+  require Ash.Query
+  alias MissionControl.Superhero
 
   @impl true
   def mount(_params, _session, socket) do
+    show_closed = true
+
     superheroes =
-      MissionControl.Superhero
+      Superhero
       |> Ash.Query.sort(healthy?: :asc, alias: :asc)
       |> Ash.Query.load(:healthy?)
       |> Ash.read!()
       |> Ash.load!([:win_rate])
 
-    assignments = list_assignments()
-
-    Logger.info(
-      "Assignments by status: #{inspect(Enum.frequencies_by(assignments, & &1.status))}"
-    )
+    assignments = list_assignments(show_closed)
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(MissionControl.PubSub, "assignment:created")
@@ -33,7 +33,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
     socket =
       socket
       |> assign(:page_title, "Dispatch")
-      |> assign(:show_closed, false)
+      |> assign(:show_closed, show_closed)
       |> stream(:superheroes, superheroes, id_key: :id)
       |> stream(:assignments, assignments, id_key: :id)
 
@@ -45,7 +45,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
     new_value = !socket.assigns.show_closed
     Logger.info("Toggling show_closed from #{socket.assigns.show_closed} to #{new_value}")
 
-    assignments = list_assignments()
+    assignments = list_assignments(new_value)
 
     {:noreply,
      socket
@@ -67,7 +67,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
   @impl true
   def handle_event("superhero_on_duty", %{"id" => id}, socket) do
-    superhero = Ash.get!(MissionControl.Superhero, id)
+    superhero = Ash.get!(Superhero, id)
 
     Logger.debug(inspect(superhero, label: "Setting superhero"))
 
@@ -83,7 +83,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
   @impl true
   def handle_event("superhero_off_duty", %{"id" => id}, socket) do
-    superhero = Ash.get!(MissionControl.Superhero, id)
+    superhero = Ash.get!(Superhero, id)
 
     case MissionControl.off_duty_superhero(superhero) do
       {:ok, updated_superhero} ->
@@ -97,7 +97,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
   @impl true
   def handle_event("superhero_recovery", %{"id" => id}, socket) do
-    superhero = Ash.get!(MissionControl.Superhero, id)
+    superhero = Ash.get!(Superhero, id)
 
     case MissionControl.recovery_superhero(superhero) do
       {:ok, updated_superhero} ->
@@ -111,7 +111,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
 
   @impl true
   def handle_event("superhero_assign", %{"id" => id}, socket) do
-    superhero = Ash.get!(MissionControl.Superhero, id)
+    superhero = Ash.get!(Superhero, id)
 
     case MissionControl.create_assignment(%{
            superhero_id: superhero.id,
@@ -255,21 +255,17 @@ defmodule MissionControlWeb.DispatchLive.Index do
     {:noreply, stream_insert(socket, :superheroes, superhero)}
   end
 
-  defp list_assignments do
+  defp list_assignments(show_closed) do
     MissionControl.Assignment
-    |> Ash.Query.sort(:closed?, inserted_at: :desc)
+    |> maybe_filter_closed(show_closed)
+    |> Ash.Query.sort(closed?: :asc, inserted_at: :desc)
     |> Ash.Query.load(:closed?)
     |> Ash.read!()
     |> Ash.load!([:maybe_superhero])
   end
 
-  defp superhero_alias(maybe_superhero) do
-    Funx.Foldable.fold_l(
-      maybe_superhero,
-      fn hero -> hero.alias end,
-      fn -> "[Missing Superhero]" end
-    )
-  end
+  defp maybe_filter_closed(query, true), do: query
+  defp maybe_filter_closed(query, false), do: Ash.Query.filter(query, closed?: false)
 
   defp handle_error(error, operation_name, socket) do
     Logger.error("#{operation_name} failed: #{inspect(error, pretty: true)}")
@@ -292,7 +288,7 @@ defmodule MissionControlWeb.DispatchLive.Index do
   defp unknown_error?(%Ash.Error.Unknown.UnknownError{}), do: true
   defp unknown_error?(_), do: false
 
-  defp get_error_message(%Ash.Error.Query.NotFound{resource: MissionControl.Superhero}) do
+  defp get_error_message(%Ash.Error.Query.NotFound{resource: Superhero}) do
     "Superhero not found"
   end
 

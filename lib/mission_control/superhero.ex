@@ -6,6 +6,7 @@ defmodule MissionControl.Superhero do
     notifiers: [Ash.Notifier.PubSub, MissionControl.Superhero.Notifiers.ActorNotifier]
 
   import Funx.Predicate
+  import Funx.Foldable
 
   alias MissionControl.Superhero.Validations.{
     MustBeOnDuty,
@@ -161,5 +162,13 @@ defmodule MissionControl.Superhero do
 
   def free?(%{} = superhero) do
     p_not(working_predicate()).(superhero)
+  end
+
+  def safe_alias(maybe_superhero) do
+    fold_l(
+      maybe_superhero,
+      fn hero -> hero.alias end,
+      fn -> "[Missing Superhero]" end
+    )
   end
 end

@@ -30,7 +30,7 @@ defmodule MissionControl.Assignment do
     end
 
     update :update do
-      accept [:status, :result, :health_cost]
+      accept [:status, :result]
       primary? true
     end
 
@@ -114,16 +114,12 @@ defmodule MissionControl.Assignment do
       default :unknown
     end
 
-    attribute :health_cost, :integer do
-      public? true
-    end
-
     timestamps()
   end
 
   calculations do
     calculate :closed?, :boolean, Closed
-    calculate :maybe_superhero, :map, MaybeSuperhero
+    calculate :maybe_superhero, :struct, MaybeSuperhero
   end
 
   relationships do
@@ -133,4 +129,5 @@ defmodule MissionControl.Assignment do
   end
 
   def closed?(%{status: status}), do: status == :closed
+  def won?(%{result: result}), do: result == :won
 end

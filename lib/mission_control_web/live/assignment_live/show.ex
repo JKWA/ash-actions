@@ -25,8 +25,6 @@ defmodule MissionControlWeb.AssignmentLive.Show do
         <:item title="Status">{@assignment.status}</:item>
 
         <:item title="Result">{@assignment.result}</:item>
-
-        <:item title="Health cost">{@assignment.health_cost}</:item>
       </.list>
     </Layouts.app>
     """

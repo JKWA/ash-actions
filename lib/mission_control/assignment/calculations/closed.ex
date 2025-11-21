@@ -6,7 +6,7 @@ defmodule MissionControl.Assignment.Calculations.Closed do
   def init(opts), do: {:ok, opts}
 
   @impl true
-  def describe(opts) do
+  def describe(_opts) do
     "Whether the assignment is closed"
   end
 
@@ -18,9 +18,7 @@ defmodule MissionControl.Assignment.Calculations.Closed do
   @impl true
   def calculate(records, _opts, _context) do
     results =
-      Enum.map(records, fn assignment ->
-        Assignment.closed?(assignment)
-      end)
+      Enum.map(records, &Assignment.closed?/1)
 
     {:ok, results}
   end

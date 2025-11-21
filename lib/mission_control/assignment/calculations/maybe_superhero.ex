@@ -18,8 +18,8 @@ defmodule MissionControl.Assignment.Calculations.MaybeSuperhero do
   @impl true
   def calculate(records, _opts, _context) do
     results =
-      Enum.map(records, fn record ->
-        Maybe.from_nil(record.superhero)
+      Enum.map(records, fn assignment ->
+        Maybe.from_nil(assignment.superhero)
       end)
 
     {:ok, results}

@@ -31,10 +31,6 @@ defmodule MissionControlWeb.AssignmentLive.Form do
               {"Dispatched", :dispatched},
               {"Closed", :closed}
             ]}
-          /><.input field={@form[:result]} type="text" label="Result" /><.input
-            field={@form[:health_cost]}
-            type="number"
-            label="Health cost"
           />
         <% end %>
 

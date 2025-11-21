@@ -35,8 +35,8 @@ defmodule MissionControl.Superhero.Calculations.Healthy do
     threshold = Keyword.fetch!(opts, :threshold)
 
     results =
-      Enum.map(records, fn record ->
-        record.health > threshold
+      Enum.map(records, fn superhero ->
+        superhero.health > threshold
       end)
 
     {:ok, results}

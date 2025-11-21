@@ -30,8 +30,6 @@ defmodule MissionControlWeb.AssignmentLive.Index do
 
         <:col :let={{_id, assignment}} label="Result">{assignment.result}</:col>
 
-        <:col :let={{_id, assignment}} label="Health cost">{assignment.health_cost}</:col>
-
         <:action :let={{_id, assignment}}>
           <div class="sr-only">
             <.link navigate={~p"/assignments/#{assignment}"}>Show</.link>

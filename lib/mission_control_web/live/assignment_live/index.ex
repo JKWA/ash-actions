@@ -26,13 +26,9 @@ defmodule MissionControlWeb.AssignmentLive.Index do
 
         <:col :let={{_id, assignment}} label="Superhero Id">{assignment.superhero_id}</:col>
 
-        <:col :let={{_id, assignment}} label="Difficulty">{assignment.difficulty}</:col>
-
         <:col :let={{_id, assignment}} label="Status">{assignment.status}</:col>
 
         <:col :let={{_id, assignment}} label="Result">{assignment.result}</:col>
-
-        <:col :let={{_id, assignment}} label="Health cost">{assignment.health_cost}</:col>
 
         <:action :let={{_id, assignment}}>
           <div class="sr-only">

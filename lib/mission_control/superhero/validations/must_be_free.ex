@@ -7,7 +7,7 @@ defmodule MissionControl.Superhero.Validations.MustBeFree do
   def validate(changeset, _opts, _context) do
     superhero = changeset.data
 
-    if Superhero.free?(superhero) do
+    if not Superhero.working?(superhero) do
       :ok
     else
       {:error,

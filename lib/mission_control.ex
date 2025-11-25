@@ -8,9 +8,11 @@ defmodule MissionControl do
       define :list_superheroes, action: :read
       define :create_superhero, action: :create
       define :update_superhero, action: :update
+      define :update_health_superhero, action: :update_health
       define :delete_superhero, action: :destroy
       define :on_duty_superhero, action: :on_duty
       define :off_duty_superhero, action: :off_duty
+      define :recovery_superhero, action: :recovery
       define :dispatch_superhero, action: :dispatch
     end
 
@@ -21,6 +23,8 @@ defmodule MissionControl do
       define :create_assignment, action: :create
       define :update_assignment, action: :update
       define :dispatch_assignment, action: :dispatch
+      define :start_fighting_assignment, action: :start_fighting
+      define :update_result_assignment, action: :update_result
       define :close_assignment, action: :close
       define :reopen_assignment, action: :reopen
       define :delete_assignment, action: :destroy

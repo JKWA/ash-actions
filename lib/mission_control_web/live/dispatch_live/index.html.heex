@@ -4,12 +4,12 @@
     <div class="flex-1">
       <div class="flex items-center justify-between mb-4 mr-2">
         <h3 class="text-xl font-semibold">Superheroes</h3>
-        <.link navigate={~p"/assignments/new?return_to=dispatch"} class="text-blue-600 hover:underline">
+        <.link navigate={~p"/superheroes/new?return_to=dispatch"} class="text-blue-600 hover:underline">
           Create
         </.link>
       </div>
       <div id="superheroes" phx-update="stream" class="flex flex-col gap-4">
-        <div :for={{id, superhero} <- @streams.superheroes} id={id} class={"card bg-base-200 shadow-xl #{superhero_status_border_class(superhero.status)}"}>
+        <div :for={{id, superhero} <- @streams.superheroes} id={id} class={"card shadow-xl #{superhero_status_border_class(superhero.status)} #{if superhero.healthy?, do: "bg-base-200", else: "bg-warning/20 border-2 border-warning"}"}>
           <div class="card-body relative">
 
             <div class="dropdown dropdown-end absolute top-2 right-2">
@@ -27,17 +27,19 @@
                     Send Off Duty
                   </button>
                 </li>
-                
+                <li>
+                  <button phx-click={JS.push("superhero_recovery", value: %{id: superhero.id})}>
+                    Send To Recovery
+                  </button>
+                </li>
                 <li>
                   <.link navigate={~p"/superheroes/#{superhero}/edit?return_to=dispatch"}>
                     Edit
                   </.link>
                 </li>
                 <li>
-                  <button
-                    phx-click={JS.push("superhero_delete", value: %{id: superhero.id})}
-                  >
-                    Delete
+                  <button phx-click={JS.push("terminate_superhero", value: %{id: superhero.id})}>
+                    Terminate
                   </button>
                 </li>
               </ul>
@@ -50,23 +52,22 @@
               {superhero.status}
             </div>
 
-            
-
-
             <div class="mt-4 space-y-2">
               <div class="flex justify-between">
                 <span class="font-semibold">Health:</span>
-                <span>{superhero.health}</span>
+                <span class={unless superhero.healthy?, do: "text-warning font-bold"}>
+                  {superhero.health}
+                </span>
               </div>
               <div class="flex justify-between">
                 <span class="font-semibold">Win Rate:</span>
-                <span>{if superhero.win_rate, do: "#{Float.round(superhero.win_rate * 100, 1)}%", else: "N/A"}</span>
+                <span>{Float.round(superhero.win_rate * 100, 1)}%</span>
               </div>
             </div>
 
             <div class="card-actions justify-end mt-4">
               <.button phx-click={JS.push("superhero_assign", value: %{id: superhero.id})} variant="primary">
-                Assign
+                Create Assignment
               </.button>
             </div>
           </div>
@@ -76,9 +77,21 @@
 
     <!-- Assignments Column -->
     <div class="flex-1">
-      <h3 class="text-xl font-semibold mb-4">Assignments</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold">Assignments</h3>
+        <label class="label cursor-pointer gap-2">
+          <span class="label-text">Show Closed</span>
+          <input
+            type="checkbox"
+            class="toggle toggle-primary"
+            checked={@show_closed}
+            phx-click="toggle_closed" />
+        </label>
+      </div>
       <div id="assignments" phx-update="stream" class="flex flex-col gap-4">
-        <div :for={{id, assignment} <- @streams.assignments} id={id} class={"card bg-base-200 shadow-xl #{status_border_class(assignment.status)}"}>
+        <div :for={{id, assignment} <- @streams.assignments} 
+          id={id} 
+          class={"card bg-base-200 shadow-xl #{status_border_class(assignment.status)} #{if !@show_closed and assignment.closed?, do: "hidden", else: ""}"}>
           <div class="card-body relative">
             <div class="dropdown dropdown-end absolute top-2 right-2">
               <button tabindex="0" role="button" class="btn btn-ghost btn-sm">
@@ -110,8 +123,9 @@
               </ul>
             </div>
 
-            <h2 class="card-title text-2xl">{assignment.name}</h2>
-            <p class="text-lg text-base-content/70">Superhero: {assignment.superhero_id}</p>
+            <h2 class="card-title text-2xl">
+              {Superhero.safe_alias(assignment.maybe_superhero)} Assignment
+            </h2>
 
             <div class={"badge mt-2 #{status_badge_class(assignment.status)}"}>
               {assignment.status}
@@ -119,21 +133,9 @@
 
             <div class="mt-4 space-y-2">
               <div class="flex justify-between">
-                <span class="font-semibold">Difficulty:</span>
-                <span>{assignment.difficulty}</span>
+                <span class="font-semibold">Result:</span>
+                <span>{assignment.result}</span>
               </div>
-              <%= if assignment.result do %>
-                <div class="flex justify-between">
-                  <span class="font-semibold">Result:</span>
-                  <span>{assignment.result}</span>
-                </div>
-              <% end %>
-              <%= if assignment.health_cost do %>
-                <div class="flex justify-between">
-                  <span class="font-semibold">Health Cost:</span>
-                  <span>{assignment.health_cost}</span>
-                </div>
-              <% end %>
             </div>
 
             <div class="card-actions justify-end mt-4">

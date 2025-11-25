@@ -11,6 +11,8 @@ defmodule MissionControl.Application do
       MissionControlWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:mission_control, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: MissionControl.PubSub},
+      {Registry, keys: :unique, name: MissionControl.SuperheroRegistry},
+      {DynamicSupervisor, strategy: :one_for_one, name: MissionControl.SuperheroSupervisor},
       # Start a worker by calling: MissionControl.Worker.start_link(arg)
       # {MissionControl.Worker, arg},
       # Start to serve requests, typically the last entry

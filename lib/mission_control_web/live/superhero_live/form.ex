@@ -25,8 +25,6 @@ defmodule MissionControlWeb.SuperheroLive.Form do
               {"Off Duty", :off_duty}
             ]}
           />
-          <.input field={@form[:fights_won]} type="number" label="Fights Won" />
-          <.input field={@form[:fights_lost]} type="number" label="Fights Lost" />
           <.input field={@form[:health]} type="number" label="Health" />
         <% end %>
 

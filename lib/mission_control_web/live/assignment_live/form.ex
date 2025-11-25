@@ -16,13 +16,6 @@ defmodule MissionControlWeb.AssignmentLive.Form do
         phx-change="validate"
         phx-submit="save"
       >
-        <%= if @form.source.type == :create do %>
-          <.input field={@form[:superhero_id]} type="text" label="Superhero" /><.input
-            field={@form[:difficulty]}
-            type="number"
-            label="Difficulty"
-          />
-        <% end %>
         <%= if @form.source.type == :update do %>
           <.input
             field={@form[:name]}
@@ -38,10 +31,6 @@ defmodule MissionControlWeb.AssignmentLive.Form do
               {"Dispatched", :dispatched},
               {"Closed", :closed}
             ]}
-          /><.input field={@form[:result]} type="text" label="Result" /><.input
-            field={@form[:health_cost]}
-            type="number"
-            label="Health cost"
           />
         <% end %>
 
